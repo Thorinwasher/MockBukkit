@@ -1,6 +1,7 @@
 package be.seeseemelk.mockbukkit;
 
 import com.destroystokyo.paper.util.VersionFetcher;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.inventory.ItemRarity;
 import net.kyori.adventure.text.Component;
@@ -13,6 +14,7 @@ import org.bukkit.FeatureFlag;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.RegionAccessor;
+import org.bukkit.Statistic;
 import org.bukkit.UnsafeValues;
 import org.bukkit.World;
 import org.bukkit.advancement.Advancement;
@@ -43,7 +45,7 @@ import java.util.List;
 public class MockUnsafeValues implements UnsafeValues
 {
 
-	private static final List<String> COMPATIBLE_API_VERSIONS = Arrays.asList("1.13", "1.14", "1.15", "1.16", "1.17", "1.18", "1.19");
+	private static final List<String> COMPATIBLE_API_VERSIONS = Arrays.asList("1.13", "1.14", "1.15", "1.16", "1.17", "1.18", "1.19", "1.20");
 
 	private String minimumApiVersion = "none";
 
@@ -111,9 +113,9 @@ public class MockUnsafeValues implements UnsafeValues
 
 
 	@Override
-	public @NotNull Material toLegacy(@NotNull Material material)
+	public Material toLegacy(Material material)
 	{
-		if (material.isLegacy())
+		if (material == null || material.isLegacy())
 		{
 			return material;
 		}
@@ -123,20 +125,29 @@ public class MockUnsafeValues implements UnsafeValues
 	@Override
 	public Material fromLegacy(Material material)
 	{
-		return material;
+		if (material == null || !material.isLegacy())
+		{
+			return material;
+		}
+		throw new UnimplementedOperationException();
 	}
 
 	@Override
 	public Material fromLegacy(MaterialData material)
 	{
-		// TODO Auto-generated method stub
-		throw new UnimplementedOperationException();
+		return fromLegacy(material, false);
 	}
 
 	@Override
-	public Material fromLegacy(MaterialData material, boolean itemPriority)
+	public Material fromLegacy(MaterialData materialData, boolean itemPriority)
 	{
-		// TODO Auto-generated method stub
+		// Paper will blindly call #getItemType even if materialData is null, so we might as well enforce that it isn't.
+		Preconditions.checkNotNull(materialData, "materialData cannot be null");
+		Material material = materialData.getItemType();
+		if (material == null || !material.isLegacy())
+		{
+			return material;
+		}
 		throw new UnimplementedOperationException();
 	}
 
@@ -313,6 +324,13 @@ public class MockUnsafeValues implements UnsafeValues
 	}
 
 	@Override
+	public @Nullable FeatureFlag getFeatureFlag(@NotNull NamespacedKey key)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
 	public int nextEntityId()
 	{
 		// TODO Auto-generated method stub
@@ -390,6 +408,13 @@ public class MockUnsafeValues implements UnsafeValues
 
 	@Override
 	public void setBiomeKey(RegionAccessor accessor, int x, int y, int z, NamespacedKey biomeKey)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public String getStatisticCriteriaKey(@NotNull Statistic statistic)
 	{
 		// TODO Auto-generated method stub
 		throw new UnimplementedOperationException();

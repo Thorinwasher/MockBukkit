@@ -13,6 +13,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -118,17 +119,17 @@ public class ChunkMock implements Chunk
 		int size = (16 * 16) * Math.abs((world.getMaxHeight() - world.getMinHeight()));
 		ImmutableMap.Builder<Coordinate, BlockData> blockData = ImmutableMap.builderWithExpectedSize(size);
 		ImmutableMap.Builder<Coordinate, Biome> biomes = ImmutableMap.builderWithExpectedSize(size);
-		for (int x = 0; x < 16; x++)
+		for (int blockX = 0; blockX < 16; blockX++)
 		{
-			for (int y = world.getMinHeight(); y < world.getMaxHeight(); y++)
+			for (int blockY = world.getMinHeight(); blockY < world.getMaxHeight(); blockY++)
 			{
-				for (int z = 0; z < 16; z++)
+				for (int blockZ = 0; blockZ < 16; blockZ++)
 				{
-					Coordinate coord = new Coordinate(x, y, z);
-					blockData.put(coord, getBlock(x, y, z).getBlockData());
+					Coordinate coord = new Coordinate(blockX, blockY, blockZ);
+					blockData.put(coord, getBlock(blockX, blockY, blockZ).getBlockData());
 					if (includeBiome || includeBiomeTempRain)
 					{
-						biomes.put(coord, world.getBiome(x << 4, y, z << 4));
+						biomes.put(coord, world.getBiome(blockX << 4, blockY, blockZ << 4));
 					}
 				}
 			}
@@ -148,8 +149,13 @@ public class ChunkMock implements Chunk
 	@Override
 	public Entity[] getEntities()
 	{
-		// TODO Auto-generated method stub
-		throw new UnimplementedOperationException();
+		BoundingBox boundingBox = new BoundingBox(x << 4,
+				world.getMinHeight(),
+				z << 4,
+				(x << 4) + 16,
+				world.getMaxHeight(),
+				(z << 4) + 16);
+		return world.getNearbyEntities(boundingBox).toArray(new Entity[0]);
 	}
 
 	@Override

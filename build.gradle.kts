@@ -24,12 +24,12 @@ dependencies {
 	api("io.papermc.paper:paper-api:${property("paper.api.full-version")}")
 
 	// Dependencies for Unit Tests
-	implementation("org.junit.jupiter:junit-jupiter:5.9.3")
+	implementation("org.junit.jupiter:junit-jupiter:5.10.0")
 
 	// General utilities for the project
 	implementation("net.kyori:adventure-platform-bungeecord:4.3.0")
 	implementation("org.jetbrains:annotations:24.0.1")
-	implementation("net.bytebuddy:byte-buddy:1.14.4")
+	implementation("net.bytebuddy:byte-buddy:1.14.6")
 
 	// LibraryLoader dependencies
 	implementation("org.apache.maven:maven-resolver-provider:3.8.5")
@@ -124,8 +124,10 @@ nexusPublishing {
 publishing {
 	publications {
 		create<MavenPublication>("maven") {
+			artifactId = "MockBukkit-v${property("paper.api.version")}"
+			from(components.getByName("java"))
 			pom {
-				name.set("MockBukkit")
+				name.set("MockBukkit-v${property("paper.api.version")}")
 				description.set("MockBukkit is a mocking framework for bukkit to allow the easy unit testing of Bukkit plugins.")
 				url.set("https://github.com/MockBukkit/MockBukkit")
 				scm {
@@ -144,6 +146,18 @@ publishing {
 						id.set("seeseemelk")
 						name.set("Sebastiaan de Schaetzen")
 						email.set("sebastiaan.de.schaetzen@gmail.com")
+					}
+					developer{
+						id.set("thebusybiscuit")
+						name.set("TheBusyBiscuit")
+					}
+					developer {
+						id.set("insprill")
+						name.set("Pierce Thompson")
+					}
+					developer {
+						id.set("thelooter")
+						name.set("Eve Kolb")
 					}
 				}
 			}

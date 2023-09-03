@@ -6,6 +6,9 @@ import be.seeseemelk.mockbukkit.ServerMock;
 import be.seeseemelk.mockbukkit.TestPlugin;
 import be.seeseemelk.mockbukkit.WorldMock;
 import be.seeseemelk.mockbukkit.block.BlockMock;
+import be.seeseemelk.mockbukkit.block.data.BlockDataMock;
+import be.seeseemelk.mockbukkit.block.state.BlockStateMock;
+import be.seeseemelk.mockbukkit.block.state.TileStateMock;
 import be.seeseemelk.mockbukkit.entity.data.EntityState;
 import be.seeseemelk.mockbukkit.inventory.EnderChestInventoryMock;
 import be.seeseemelk.mockbukkit.inventory.InventoryMock;
@@ -13,6 +16,7 @@ import be.seeseemelk.mockbukkit.map.MapViewMock;
 import be.seeseemelk.mockbukkit.plugin.PluginManagerMock;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -30,6 +34,7 @@ import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -66,8 +71,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.map.MapCanvas;
 import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.jetbrains.annotations.NotNull;
@@ -81,9 +84,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.opentest4j.AssertionFailedError;
 
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BrokenBarrierException;
@@ -1043,45 +1046,6 @@ class PlayerMockTest
 	}
 
 	@Test
-	void testPotionEffects()
-	{
-		PotionEffect effect = new PotionEffect(PotionEffectType.CONFUSION, 3, 1);
-		assertTrue(player.addPotionEffect(effect));
-
-		assertTrue(player.hasPotionEffect(effect.getType()));
-		assertTrue(player.getActivePotionEffects().contains(effect));
-
-		assertEquals(effect, player.getPotionEffect(effect.getType()));
-
-		player.removePotionEffect(effect.getType());
-		assertFalse(player.hasPotionEffect(effect.getType()));
-		assertFalse(player.getActivePotionEffects().contains(effect));
-
-	}
-
-	@Test
-	void testInstantEffect()
-	{
-		PotionEffect instant = new PotionEffect(PotionEffectType.HEAL, 0, 1);
-		assertTrue(player.addPotionEffect(instant));
-		assertFalse(player.hasPotionEffect(instant.getType()));
-	}
-
-	@Test
-	void testMultiplePotionEffects()
-	{
-		Collection<PotionEffect> effects = Arrays.asList(new PotionEffect(PotionEffectType.BAD_OMEN, 3, 1),
-				new PotionEffect(PotionEffectType.LUCK, 5, 2));
-
-		assertTrue(player.addPotionEffects(effects));
-
-		for (PotionEffect effect : effects)
-		{
-			assertTrue(player.hasPotionEffect(effect.getType()));
-		}
-	}
-
-	@Test
 	void testIllegalArgumentForSpawning()
 	{
 		World world = new WorldMock();
@@ -1466,7 +1430,8 @@ class PlayerMockTest
 	void testPlayerPlayEffect()
 	{
 		Location loc = player.getLocation();
-		assertDoesNotThrow(() -> player.playEffect(loc, Effect.STEP_SOUND, Material.STONE));
+		BlockDataMock blockData = new BlockDataMock(Material.STONE);
+		assertDoesNotThrow(() -> player.playEffect(loc, Effect.STEP_SOUND, blockData));
 	}
 
 	@Test
@@ -1496,6 +1461,36 @@ class PlayerMockTest
 		{
 			player.sendBlockDamage(loc, 0.5f);
 		});
+	}
+
+	@Test
+	void testPlayerSendBlockChange()
+	{
+		assertDoesNotThrow(() ->
+		{
+			player.sendBlockUpdate(player.getLocation(), new TileStateMock(Material.CHEST)
+			{
+				@Override
+				public @NotNull BlockState getSnapshot()
+				{
+					return new BlockStateMock(Material.CHEST);
+				}
+			});
+		});
+	}
+
+	@Test
+	void testPlayerSendBlockUpdateInvalid()
+	{
+		assertThrows(NullPointerException.class, () -> player.sendBlockUpdate(player.getLocation(), null));
+		assertThrows(NullPointerException.class, () -> player.sendBlockUpdate(null, new TileStateMock(Material.CHEST)
+		{
+			@Override
+			public @NotNull BlockState getSnapshot()
+			{
+				return new BlockStateMock(Material.CHEST);
+			}
+		}));
 	}
 
 	@Test
@@ -2218,6 +2213,94 @@ class PlayerMockTest
 		player.setExpCooldown(10);
 		server.getPluginManager().assertEventFired(PlayerExpCooldownChangeEvent.class);
 		assertEquals(10, player.getExpCooldown());
+	}
+
+	@Test
+	void addAndRemoveBossBar()
+	{
+		BossBar bar = BossBar.bossBar(Component.text("Test"), 1, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS);
+		player.showBossBar(bar);
+		assertEquals(1, player.getBossBars().size());
+		assertTrue(player.getBossBars().contains(bar));
+
+		BossBar bossBar = List.copyOf(player.getBossBars()).get(0);
+		Component name = bossBar.name();
+		assertTrue(name instanceof net.kyori.adventure.text.TextComponent);
+		assertEquals("Test", ((net.kyori.adventure.text.TextComponent) name).content());
+		assertEquals(1, bossBar.progress());
+		assertEquals(BossBar.Color.BLUE, bossBar.color());
+		assertEquals(BossBar.Overlay.PROGRESS, bossBar.overlay());
+
+		player.hideBossBar(bar);
+		assertEquals(0, player.getBossBars().size());
+		assertFalse(player.getBossBars().contains(bar));
+	}
+
+	@Test
+	void addAndRemoveMultipleBossBar()
+	{
+		BossBar bar1 = BossBar.bossBar(Component.text("Test1"), 1, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS);
+		BossBar bar2 = BossBar.bossBar(Component.text("Test2"), 1, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS);
+		BossBar bar3 = BossBar.bossBar(Component.text("Test3"), 1, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS);
+
+		player.showBossBar(bar1);
+		player.showBossBar(bar2);
+		player.showBossBar(bar3);
+
+		assertEquals(3, player.getBossBars().size());
+
+		player.hideBossBar(bar2);
+
+		assertEquals(2, player.getBossBars().size());
+		assertTrue(player.getBossBars().contains(bar1));
+		assertFalse(player.getBossBars().contains(bar2));
+
+		player.hideBossBar(bar1);
+
+		assertEquals(1, player.getBossBars().size());
+		assertFalse(player.getBossBars().contains(bar1));
+
+		player.showBossBar(bar2);
+
+		assertEquals(2, player.getBossBars().size());
+		assertTrue(player.getBossBars().contains(bar2));
+		assertTrue(player.getBossBars().contains(bar3));
+	}
+
+	@Test
+	void updateViewedBossBar()
+	{
+		BossBar bar = BossBar.bossBar(Component.text("Test"), 1, BossBar.Color.BLUE, BossBar.Overlay.PROGRESS, Collections.singleton(BossBar.Flag.PLAY_BOSS_MUSIC));
+		player.showBossBar(bar);
+
+		assertEquals(1, player.getBossBars().size());
+		assertTrue(player.getBossBars().contains(bar));
+
+		BossBar bossBar = List.copyOf(player.getBossBars()).get(0);
+		Component name = bossBar.name();
+		assertTrue(name instanceof net.kyori.adventure.text.TextComponent);
+		assertEquals("Test", ((net.kyori.adventure.text.TextComponent) name).content());
+		assertEquals(1, bossBar.progress());
+		assertEquals(BossBar.Color.BLUE, bossBar.color());
+		assertEquals(BossBar.Overlay.PROGRESS, bossBar.overlay());
+		assertEquals(Collections.singleton(BossBar.Flag.PLAY_BOSS_MUSIC), bossBar.flags());
+
+		bar.name(Component.text("Test2"));
+		name = bossBar.name();
+		assertTrue(name instanceof net.kyori.adventure.text.TextComponent);
+		assertEquals("Test2", ((net.kyori.adventure.text.TextComponent) name).content());
+
+		bar.progress(0.5f);
+		assertEquals(0.5f, bossBar.progress());
+
+		bar.color(BossBar.Color.GREEN);
+		assertEquals(BossBar.Color.GREEN, bossBar.color());
+
+		bar.overlay(BossBar.Overlay.NOTCHED_10);
+		assertEquals(BossBar.Overlay.NOTCHED_10, bossBar.overlay());
+
+		bar.flags(Collections.singleton(BossBar.Flag.DARKEN_SCREEN));
+		assertEquals(Collections.singleton(BossBar.Flag.DARKEN_SCREEN), bossBar.flags());
 	}
 
 }

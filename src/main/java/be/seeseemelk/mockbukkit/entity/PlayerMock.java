@@ -20,6 +20,7 @@ import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.TeleportFlag;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.math.Position;
+import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.chat.SignedMessage;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -29,6 +30,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.util.TriState;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.BaseComponent;
+import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
@@ -54,6 +56,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
+import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.sign.Side;
 import org.bukkit.conversations.Conversation;
@@ -102,11 +105,17 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -164,12 +173,15 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 	private final Queue<String> title = new LinkedTransferQueue<>();
 	private final Queue<String> subitles = new LinkedTransferQueue<>();
 
+	private final Set<BossBar> bossBars = new HashSet<>();
+
 	private Scoreboard scoreboard;
 	private final StatisticsMock statistics = new StatisticsMock();
 
 	private final Set<String> channels = new HashSet<>();
 
 	private final List<ItemStack> consumedItems = new LinkedList<>();
+	private Locale locale;
 
 	/**
 	 * Constructs a new {@link PlayerMock} for the provided server with the specified name.
@@ -216,6 +228,7 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 		Random random = ThreadLocalRandom.current();
 		address = new InetSocketAddress("192.0.2." + random.nextInt(255), random.nextInt(32768, 65535));
 		scoreboard = server.getScoreboardManager().getMainScoreboard();
+		locale = Locale.ENGLISH;
 	}
 
 	/**
@@ -560,9 +573,37 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 	}
 
 	@Override
+	public boolean isConnected()
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
 	public boolean isBanned()
 	{
 		return MockBukkit.getMock().getBanList(BanList.Type.NAME).isBanned(getName());
+	}
+
+	@Override
+	public <E extends BanEntry<? super PlayerProfile>> @Nullable E ban(@Nullable String reason, @Nullable Instant expires, @Nullable String source)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public <E extends BanEntry<? super PlayerProfile>> @Nullable E ban(@Nullable String reason, @Nullable Duration duration, @Nullable String source)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public @Nullable BanEntry<org.bukkit.profile.PlayerProfile> ban(@Nullable String reason, @Nullable Date expires, @Nullable String source)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
 	}
 
 	/**
@@ -957,6 +998,48 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 	}
 
 	@Override
+	public <E extends BanEntry<? super PlayerProfile>> @Nullable E ban(@Nullable String reason, @Nullable Instant expires, @Nullable String source, boolean kickPlayer)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public <E extends BanEntry<? super PlayerProfile>> @Nullable E ban(@Nullable String reason, @Nullable Duration duration, @Nullable String source, boolean kickPlayer)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public @Nullable BanEntry<org.bukkit.profile.PlayerProfile> ban(@Nullable String reason, @Nullable Date expires, @Nullable String source, boolean kickPlayer)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public @Nullable BanEntry<InetAddress> banIp(@Nullable String reason, @Nullable Date expires, @Nullable String source, boolean kickPlayer)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public @Nullable BanEntry<InetAddress> banIp(@Nullable String reason, @Nullable Instant expires, @Nullable String source, boolean kickPlayer)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public @Nullable BanEntry<InetAddress> banIp(@Nullable String reason, @Nullable Duration duration, @Nullable String source, boolean kickPlayer)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
 	public boolean isSneaking()
 	{
 		return sneaking;
@@ -1272,7 +1355,7 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 		Preconditions.checkNotNull(effect, "Effect cannot be null");
 		if (data != null)
 		{
-			Preconditions.checkArgument(effect.getData() != null && effect.getData().isAssignableFrom(data.getClass()), "Wrong kind of data for this effect!");
+			Preconditions.checkArgument(effect.getData() != null && effect.getData().isAssignableFrom(data.getClass()), "Wrong kind of data for this effect! (Expected " + effect.getData() + ", got " + data.getClass());
 		}
 		else
 		{
@@ -1317,6 +1400,13 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 		Preconditions.checkNotNull(loc, "Location cannot be null");
 		Preconditions.checkNotNull(block, "Block cannot be null");
 		// Pretend we sent the block change.
+	}
+
+	@Override
+	public void sendBlockChanges(@NotNull Collection<BlockState> blocks)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
 	}
 
 	@Override
@@ -1366,6 +1456,14 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 		{
 			throw new IllegalArgumentException("Must have at least 4 lines");
 		}
+	}
+
+	@Override
+	public void sendBlockUpdate(@NotNull Location loc, @NotNull TileState tileState) throws IllegalArgumentException
+	{
+		Preconditions.checkNotNull(loc);
+		Preconditions.checkNotNull(tileState);
+		//Pretend we sent block update
 	}
 
 	@Override
@@ -1910,6 +2008,27 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 		throw new UnimplementedOperationException();
 	}
 
+	@Override
+	public boolean isListed(@NotNull Player other)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public boolean unlistPlayer(@NotNull Player other)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public boolean listPlayer(@NotNull Player other)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
 
 	@Override
 	public boolean isFlying()
@@ -2180,6 +2299,37 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 	}
 
 	@Override
+	public void showBossBar(@NotNull BossBar bar)
+	{
+		Preconditions.checkNotNull(bar, "Bossbar cannot be null");
+		this.bossBars.add(bar);
+	}
+
+	@Override
+	public void hideBossBar(@NotNull BossBar bar)
+	{
+		Preconditions.checkNotNull(bar, "Bossbar cannot be null");
+		this.bossBars.remove(bar);
+	}
+
+	/**
+	 * Gets an unmodifiable set of all active boss bars currently shown to this player.
+	 * Helper method to {@link PlayerMock#activeBossBars()}.
+	 *
+	 * @see #activeBossBars()
+	 */
+	public @UnmodifiableView @NotNull Set<BossBar> getBossBars()
+	{
+		return Collections.unmodifiableSet(this.bossBars);
+	}
+
+	@Override
+	public @UnmodifiableView @NotNull Iterable<? extends BossBar> activeBossBars()
+	{
+		return getBossBars();
+	}
+
+	@Override
 	public void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count)
 	{
 		this.spawnParticle(particle, location.getX(), location.getY(), location.getZ(), count);
@@ -2277,8 +2427,7 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 	@Override
 	public @NotNull String getLocale()
 	{
-		// TODO Auto-generated method stub
-		throw new UnimplementedOperationException();
+		return locale().toLanguageTag();
 	}
 
 	@Override
@@ -2401,8 +2550,7 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 	@Override
 	public @NotNull Locale locale()
 	{
-		// TODO Auto-generated method stub
-		throw new UnimplementedOperationException();
+		return this.locale;
 	}
 
 	@Override
@@ -2686,6 +2834,13 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 	}
 
 	@Override
+	public void sendMultiBlockChange(@NotNull Map<? extends Position, BlockData> blockChanges)
+	{
+		Preconditions.checkNotNull(blockChanges, "Block changes cannot be null");
+		//Pretend to send the packet
+	}
+
+	@Override
 	public void sendBlockDamage(@NotNull Location loc, float progress, int destroyerIdentity)
 	{
 		// TODO Auto-generated method stub
@@ -2898,6 +3053,17 @@ public class PlayerMock extends HumanEntityMock implements Player, SoundReceiver
 			sendMessage(position, new BaseComponent[]{ component });
 		}
 
+	}
+
+	/**
+	 * Sets player locale
+	 *
+	 * @param locale the locale
+	 */
+	public void setLocale(@NotNull Locale locale)
+	{
+		Preconditions.checkNotNull(locale, "locale cannot be null");
+		this.locale = locale;
 	}
 
 }

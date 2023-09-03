@@ -3,6 +3,7 @@ package be.seeseemelk.mockbukkit;
 import be.seeseemelk.mockbukkit.block.BlockMock;
 import be.seeseemelk.mockbukkit.block.data.BlockDataMock;
 import be.seeseemelk.mockbukkit.entity.AllayMock;
+import be.seeseemelk.mockbukkit.entity.AreaEffectCloudMock;
 import be.seeseemelk.mockbukkit.entity.ArmorStandMock;
 import be.seeseemelk.mockbukkit.entity.AxolotlMock;
 import be.seeseemelk.mockbukkit.entity.BatMock;
@@ -68,6 +69,7 @@ import be.seeseemelk.mockbukkit.persistence.PersistentDataContainerMock;
 import com.destroystokyo.paper.HeightmapType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.event.world.WorldGameRuleChangeEvent;
 import io.papermc.paper.world.MoonPhase;
 import org.bukkit.BlockChangeDelegate;
 import org.bukkit.Bukkit;
@@ -100,6 +102,7 @@ import org.bukkit.boss.DragonBattle;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Allay;
 import org.bukkit.entity.Animals;
+import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Axolotl;
@@ -647,6 +650,14 @@ public class WorldMock implements World
 	public void removeMetadata(@NotNull String metadataKey, @NotNull Plugin owningPlugin)
 	{
 		metadataTable.removeMetadata(metadataKey, owningPlugin);
+	}
+
+	/**
+	 * @see MetadataTable#clearMetadata(Plugin)
+	 */
+	public void clearMetadata(Plugin plugin)
+	{
+		metadataTable.clearMetadata(plugin);
 	}
 
 	@Override
@@ -1231,6 +1242,10 @@ public class WorldMock implements World
 		{
 			return new StorageMinecartMock(server, UUID.randomUUID());
 		}
+		else if (clazz == AreaEffectCloud.class)
+		{
+			return new AreaEffectCloudMock(server, UUID.randomUUID());
+		}
 		throw new UnimplementedOperationException();
 	}
 
@@ -1373,8 +1388,7 @@ public class WorldMock implements World
 	@Override
 	public @NotNull Collection<Entity> getNearbyEntities(Location location, double x, double y, double z)
 	{
-		// TODO Auto-generated method stub
-		throw new UnimplementedOperationException();
+		return getNearbyEntities(location, x, y, z, null);
 	}
 
 	@Override
@@ -2048,16 +2062,28 @@ public class WorldMock implements World
 		{
 			return false;
 		}
-		if (gameRule.getType().equals(Boolean.TYPE)
+		if (gameRule.getType().equals(Boolean.class)
 				&& (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")))
 		{
+			WorldGameRuleChangeEvent event =
+					new WorldGameRuleChangeEvent(this, null, gameRule, value);
+			if (!event.callEvent())
+			{
+				return false;
+			}
 			return setGameRule((GameRule<Boolean>) gameRule, value.equalsIgnoreCase("true"));
 		}
-		else if (gameRule.getType().equals(Integer.TYPE))
+		else if (gameRule.getType().equals(Integer.class))
 		{
 			try
 			{
 				int intValue = Integer.parseInt(value);
+				WorldGameRuleChangeEvent event =
+						new WorldGameRuleChangeEvent(this, null, gameRule, value);
+				if (!event.callEvent())
+				{
+					return false;
+				}
 				return setGameRule((GameRule<Integer>) gameRule, intValue);
 			}
 			catch (NumberFormatException e)
@@ -2224,22 +2250,22 @@ public class WorldMock implements World
 	public @NotNull Collection<Entity> getNearbyEntities(Location location, double x, double y, double z,
 														 Predicate<Entity> filter)
 	{
-		// TODO Auto-generated method stub
-		throw new UnimplementedOperationException();
+		return getNearbyEntities(BoundingBox.of(location, x, y, z), filter);
 	}
 
 	@Override
 	public @NotNull Collection<Entity> getNearbyEntities(BoundingBox boundingBox)
 	{
-		// TODO Auto-generated method stub
-		throw new UnimplementedOperationException();
+		return getNearbyEntities(boundingBox, null);
 	}
 
 	@Override
 	public @NotNull Collection<Entity> getNearbyEntities(BoundingBox boundingBox, Predicate<Entity> filter)
 	{
-		// TODO Auto-generated method stub
-		throw new UnimplementedOperationException();
+		return getEntities().stream()
+				.filter(entity -> filter == null || filter.test(entity))
+				.filter(entity -> boundingBox.contains(entity.getLocation().toVector()))
+				.collect(Collectors.toSet());
 	}
 
 	@Override
@@ -2825,6 +2851,12 @@ public class WorldMock implements World
 	public DragonBattle getEnderDragonBattle()
 	{
 		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
+	public @NotNull Set<FeatureFlag> getFeatureFlags()
+	{
 		throw new UnimplementedOperationException();
 	}
 
