@@ -16,6 +16,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.VoxelShape;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,7 +35,7 @@ public class BlockDataMock implements BlockData
 	private static final String NULL_MATERIAL_EXCEPTION_MESSAGE = "Material cannot be null";
 
 	private final @NotNull Material type;
-	private final @NotNull Map<String, Object> data;
+	private @NotNull Map<String, Object> data;
 
 	/**
 	 * Constructs a new {@link BlockDataMock} for the provided {@link Material}.
@@ -218,6 +219,13 @@ public class BlockDataMock implements BlockData
 	}
 
 	@Override
+	public @NotNull VoxelShape getCollisionShape(@NotNull Location location)
+	{
+		// TODO Auto-generated method stub
+		throw new UnimplementedOperationException();
+	}
+
+	@Override
 	public @NotNull Material getPlacementMaterial()
 	{
 		// TODO Auto-generated method stub
@@ -307,11 +315,13 @@ public class BlockDataMock implements BlockData
 	{
 		try
 		{
-			return (BlockData) super.clone();
+			BlockDataMock clonedObject = (BlockDataMock) super.clone();
+			clonedObject.data = new LinkedHashMap<>(clonedObject.data);
+			return clonedObject;
 		}
 		catch (CloneNotSupportedException e)
 		{
-			return BlockDataMock.mock(type);
+			return BlockDataMock.mock(type, this.data);
 		}
 	}
 
@@ -344,6 +354,13 @@ public class BlockDataMock implements BlockData
 			case LEVER -> new SwitchMock(material);
 			default -> new BlockDataMock(material);
 		};
+	}
+
+	private static @NotNull BlockDataMock mock(@NotNull Material material, @NotNull Map<String, Object> previousData)
+	{
+		BlockDataMock blockDataMock = BlockDataMock.mock(material);
+		blockDataMock.data.putAll(previousData);
+		return blockDataMock;
 	}
 
 	/**
