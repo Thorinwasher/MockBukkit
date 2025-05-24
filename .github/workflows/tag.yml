@@ -2,7 +2,7 @@ name: Tag
 
 on:
   push:
-    branches: [ v1.* ]
+    branches: [ v1.*, ci/remove-pat-requirement-on-tag ]
 
 jobs:
   tag:
